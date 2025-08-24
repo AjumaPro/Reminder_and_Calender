@@ -189,12 +189,12 @@ class _StickyNotesScreenState extends State<StickyNotesScreen>
 
   Widget _buildStickyNotesGrid(List<Note> notes, NoteProvider noteProvider) {
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.0,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.1,
       ),
       itemCount: notes.length,
       itemBuilder: (context, index) {

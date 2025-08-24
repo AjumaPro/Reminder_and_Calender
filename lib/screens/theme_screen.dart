@@ -234,9 +234,9 @@ class _ThemeScreenState extends State<ThemeScreen> {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.8,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 2.0,
             ),
             itemCount: _colorSchemes.length,
             itemBuilder: (context, index) {

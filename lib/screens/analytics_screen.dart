@@ -555,9 +555,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.0,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 1.2,
             ),
             itemCount: badges.length,
             itemBuilder: (context, index) {
@@ -636,7 +636,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     final progressPercent = (progress / target).clamp(0.0, 1.0);
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: unlocked
@@ -651,18 +651,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: unlocked ? badge['color'].withOpacity(0.4) : Colors.grey[300]!,
-          width: 2,
+          width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
             color: unlocked
                 ? badge['color'].withOpacity(0.1)
                 : Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -671,7 +671,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: unlocked
@@ -690,23 +690,23 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                   color: unlocked
                       ? badge['color'].withOpacity(0.3)
                       : Colors.grey.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
             child: Icon(
               badge['icon'],
               color: Colors.white,
-              size: 20,
+              size: 16,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Flexible(
             child: Text(
               badge['title'],
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 9,
                 fontWeight: FontWeight.w600,
                 color: unlocked ? badge['color'] : Colors.grey[600],
               ),
@@ -715,21 +715,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
               maxLines: 2,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             '$progress/$target',
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 8,
               color: Colors.grey[500],
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 3),
           Container(
-            height: 4,
+            height: 3,
             decoration: BoxDecoration(
               color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(1.5),
             ),
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
@@ -742,7 +742,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                       badge['color'].withOpacity(0.8),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(1.5),
                 ),
               ),
             ),
@@ -1047,9 +1047,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.8,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 2.0,
             ),
             itemCount: metrics.length,
             itemBuilder: (context, index) {
@@ -1104,7 +1104,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
 
   Widget _buildMetricCard(Map<String, dynamic> metric) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -1114,7 +1114,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: metric['color'].withOpacity(0.3),
           width: 1.5,
@@ -1122,8 +1122,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
         boxShadow: [
           BoxShadow(
             color: metric['color'].withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -1132,7 +1132,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -1140,20 +1140,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                   metric['color'].withOpacity(0.1),
                 ],
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               metric['icon'],
               color: metric['color'],
-              size: 28,
+              size: 20,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Flexible(
             child: Text(
               '${metric['value']}${metric['unit']}',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: metric['color'],
                 shadows: [
@@ -1167,12 +1167,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Flexible(
             child: Text(
               metric['title'],
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
                 color: metric['color'].withOpacity(0.8),
               ),
