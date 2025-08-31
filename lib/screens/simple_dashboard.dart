@@ -17,20 +17,38 @@ class _SimpleDashboardState extends State<SimpleDashboard>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
+  late AnimationController _pulseController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  late Animation<double> _pulseAnimation;
+
+  // Mock weather data (in a real app, this would come from a weather API)
+  final Map<String, dynamic> _weatherData = {
+    'temperature': 22,
+    'condition': 'sunny',
+    'location': 'Your City',
+    'emoji': '☀️',
+  };
+
+  // Mock productivity streak
+  int _productivityStreak = 7;
 
   @override
   void initState() {
     super.initState();
 
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
 
     _slideController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
 
@@ -50,8 +68,17 @@ class _SimpleDashboardState extends State<SimpleDashboard>
       curve: Curves.easeOutBack,
     ));
 
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOut,
+    ));
+
     _fadeController.forward();
     _slideController.forward();
+    _pulseController.repeat(reverse: true);
 
     // Load data when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -68,6 +95,7 @@ class _SimpleDashboardState extends State<SimpleDashboard>
   void dispose() {
     _fadeController.dispose();
     _slideController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -128,11 +156,15 @@ class _SimpleDashboardState extends State<SimpleDashboard>
                     children: [
                       _buildWelcomeCard(),
                       const SizedBox(height: 20),
+                      _buildWeatherAndStreakRow(),
+                      const SizedBox(height: 20),
                       _buildProgressSection(taskProvider),
                       const SizedBox(height: 20),
                       _buildStatsSection(taskProvider, noteProvider),
                       const SizedBox(height: 20),
                       _buildQuickActions(),
+                      const SizedBox(height: 20),
+                      _buildQuickTips(),
                       const SizedBox(height: 20),
                       _buildTasksOverview(taskProvider),
                       const SizedBox(height: 20),
@@ -147,30 +179,33 @@ class _SimpleDashboardState extends State<SimpleDashboard>
           );
         },
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF667EEA).withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: FloatingActionButton.extended(
-          onPressed: () => _showQuickAddMenu(),
-          backgroundColor: const Color(0xFF667EEA),
-          foregroundColor: Colors.white,
-          icon: const Icon(Icons.add_rounded),
-          label: const Text(
-            'Quick Add',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
+      floatingActionButton: ScaleTransition(
+        scale: _pulseAnimation,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF667EEA).withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-          elevation: 0,
+          child: FloatingActionButton.extended(
+            onPressed: () => _showQuickAddMenu(),
+            backgroundColor: const Color(0xFF667EEA),
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.add_rounded),
+            label: const Text(
+              'Quick Add',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+            elevation: 0,
+          ),
         ),
       ),
     );
@@ -181,16 +216,20 @@ class _SimpleDashboardState extends State<SimpleDashboard>
     final hour = now.hour;
     String greeting;
     String emoji;
+    String motivation;
 
     if (hour < 12) {
       greeting = 'Good Morning!';
       emoji = '🌅';
+      motivation = 'Start your day with purpose!';
     } else if (hour < 17) {
       greeting = 'Good Afternoon!';
       emoji = '☀️';
+      motivation = 'Keep up the great work!';
     } else {
       greeting = 'Good Evening!';
       emoji = '🌙';
+      motivation = 'Time to reflect and plan!';
     }
 
     return Container(
@@ -198,7 +237,7 @@ class _SimpleDashboardState extends State<SimpleDashboard>
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+          colors: [Color(0xFF667EEA), Color(0xFF764BA2), Color(0xFFF093FB)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -223,14 +262,22 @@ class _SimpleDashboardState extends State<SimpleDashboard>
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black26,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Ready to boost your productivity?',
-                  style: TextStyle(
+                Text(
+                  motivation,
+                  style: const TextStyle(
                     fontSize: 16,
                     color: Colors.white70,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -240,6 +287,10 @@ class _SimpleDashboardState extends State<SimpleDashboard>
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1,
+                    ),
                   ),
                   child: const Text(
                     'Tap Quick Add to get started!',
@@ -256,6 +307,146 @@ class _SimpleDashboardState extends State<SimpleDashboard>
           Text(
             emoji,
             style: const TextStyle(fontSize: 48),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeatherAndStreakRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildWeatherCard(),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStreakCard(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeatherCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF4FC3F7),
+            const Color(0xFF29B6F6),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4FC3F7).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Text(
+            _weatherData['emoji'],
+            style: const TextStyle(fontSize: 32),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_weatherData['temperature']}°C',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  _weatherData['condition'].toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  _weatherData['location'],
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.white60,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStreakCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFFF6B35),
+            const Color(0xFFFF8A65),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF6B35).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.local_fire_department,
+                color: Colors.white,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$_productivityStreak',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Day Streak',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.white70,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const Text(
+            'Keep it up!',
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.white60,
+            ),
           ),
         ],
       ),
@@ -294,22 +485,58 @@ class _SimpleDashboardState extends State<SimpleDashboard>
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
-                '$percentage%',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF667EEA),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF667EEA),
+                      const Color(0xFF764BA2),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '$percentage%',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          LinearProgressIndicator(
-            value: progress,
-            backgroundColor: Colors.grey.withOpacity(0.2),
-            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF667EEA)),
-            minHeight: 8,
+          Stack(
+            children: [
+              Container(
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 800),
+                height: 12,
+                width: MediaQuery.of(context).size.width * 0.7 * progress,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF667EEA).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Row(
@@ -320,6 +547,7 @@ class _SimpleDashboardState extends State<SimpleDashboard>
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               if (totalTasks > 0)
@@ -328,9 +556,82 @@ class _SimpleDashboardState extends State<SimpleDashboard>
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 14,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickTips() {
+    final tips = [
+      'Break large tasks into smaller ones',
+      'Use the Pomodoro technique for focus',
+      'Pin important notes for quick access',
+      'Set realistic daily goals',
+      'Review your progress weekly',
+    ];
+
+    final randomTip = tips[DateTime.now().day % tips.length];
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFE8F5E8),
+            const Color(0xFFF1F8E9),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF4CAF50).withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF4CAF50).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.lightbulb_outline,
+              color: Color(0xFF4CAF50),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Productivity Tip',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2E7D32),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  randomTip,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF388E3C),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -343,178 +644,11 @@ class _SimpleDashboardState extends State<SimpleDashboard>
     final completedTasks = taskProvider.completedTasks.length;
     final totalNotes = noteProvider.notes.length;
     final pendingTasks = taskProvider.pendingTasks.length;
+    final overdueTasks = taskProvider.tasks
+        .where((task) =>
+            task.dueDate.isBefore(DateTime.now()) && !task.isCompleted)
+        .length;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Use different layouts based on available width
-        if (constraints.maxWidth < 600) {
-          // Stack cards vertically on smaller screens
-          return Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'Tasks',
-                      totalTasks.toString(),
-                      Icons.task_alt,
-                      const Color(0xFF667EEA),
-                      subtitle: 'Total',
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Done',
-                      completedTasks.toString(),
-                      Icons.check_circle,
-                      const Color(0xFF4CAF50),
-                      subtitle: 'Complete',
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'Pending',
-                      pendingTasks.toString(),
-                      Icons.schedule,
-                      const Color(0xFFFF9800),
-                      subtitle: 'To do',
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Notes',
-                      totalNotes.toString(),
-                      Icons.note,
-                      const Color(0xFF9C27B0),
-                      subtitle: 'Saved',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        } else {
-          // Use horizontal layout on larger screens
-          return Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Tasks',
-                  totalTasks.toString(),
-                  Icons.task_alt,
-                  const Color(0xFF667EEA),
-                  subtitle: 'Total',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Done',
-                  completedTasks.toString(),
-                  Icons.check_circle,
-                  const Color(0xFF4CAF50),
-                  subtitle: 'Complete',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Pending',
-                  pendingTasks.toString(),
-                  Icons.schedule,
-                  const Color(0xFFFF9800),
-                  subtitle: 'To do',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Notes',
-                  totalNotes.toString(),
-                  Icons.note,
-                  const Color(0xFF9C27B0),
-                  subtitle: 'Saved',
-                ),
-              ),
-            ],
-          );
-        }
-      },
-    );
-  }
-
-  Widget _buildStatCard(String title, String value, IconData icon, Color color,
-      {String? subtitle}) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 9,
-                color: color.withOpacity(0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActions() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -532,39 +666,300 @@ class _SimpleDashboardState extends State<SimpleDashboard>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Quick Actions',
+            'Overview',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Use different layouts based on available width
+              if (constraints.maxWidth < 600) {
+                // Stack cards vertically on smaller screens
+                return Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            'Tasks',
+                            totalTasks.toString(),
+                            Icons.task_alt,
+                            const Color(0xFF667EEA),
+                            subtitle: 'Total',
+                            trend: totalTasks > 0 ? '+${totalTasks}' : '0',
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildStatCard(
+                            'Done',
+                            completedTasks.toString(),
+                            Icons.check_circle,
+                            const Color(0xFF4CAF50),
+                            subtitle: 'Complete',
+                            trend:
+                                completedTasks > 0 ? '+${completedTasks}' : '0',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            'Pending',
+                            pendingTasks.toString(),
+                            Icons.schedule,
+                            const Color(0xFFFF9800),
+                            subtitle: 'To do',
+                            trend: pendingTasks > 0 ? '+${pendingTasks}' : '0',
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildStatCard(
+                            'Overdue',
+                            overdueTasks.toString(),
+                            Icons.warning,
+                            const Color(0xFFF44336),
+                            subtitle: 'Late',
+                            trend: overdueTasks > 0 ? '+${overdueTasks}' : '0',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            'Notes',
+                            totalNotes.toString(),
+                            Icons.note,
+                            const Color(0xFF9C27B0),
+                            subtitle: 'Saved',
+                            trend: totalNotes > 0 ? '+${totalNotes}' : '0',
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildStatCard(
+                            'Pinned',
+                            noteProvider.pinnedNotes.length.toString(),
+                            Icons.push_pin,
+                            const Color(0xFFE91E63),
+                            subtitle: 'Important',
+                            trend: noteProvider.pinnedNotes.length > 0
+                                ? '+${noteProvider.pinnedNotes.length}'
+                                : '0',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              } else {
+                // Use horizontal layout on larger screens
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        'Tasks',
+                        totalTasks.toString(),
+                        Icons.task_alt,
+                        const Color(0xFF667EEA),
+                        subtitle: 'Total',
+                        trend: totalTasks > 0 ? '+${totalTasks}' : '0',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Done',
+                        completedTasks.toString(),
+                        Icons.check_circle,
+                        const Color(0xFF4CAF50),
+                        subtitle: 'Complete',
+                        trend: completedTasks > 0 ? '+${completedTasks}' : '0',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Pending',
+                        pendingTasks.toString(),
+                        Icons.schedule,
+                        const Color(0xFFFF9800),
+                        subtitle: 'To do',
+                        trend: pendingTasks > 0 ? '+${pendingTasks}' : '0',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Notes',
+                        totalNotes.toString(),
+                        Icons.note,
+                        const Color(0xFF9C27B0),
+                        subtitle: 'Saved',
+                        trend: totalNotes > 0 ? '+${totalNotes}' : '0',
+                      ),
+                    ),
+                  ],
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color,
+      {String? subtitle, String? trend}) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: color,
+                ),
+              ),
+              if (trend != null)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    trend,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 10,
+                color: color.withOpacity(0.7),
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Quick Actions',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: _buildActionButton(
+                child: _buildQuickActionCard(
                   'Add Task',
                   Icons.add_task,
-                  const Color(0xFF667EEA),
+                  Colors.green,
                   () => _showAddTaskDialog(),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildActionButton(
-                  'Add Note',
-                  Icons.note_add,
-                  const Color(0xFF4CAF50),
-                  () => _showAddNoteDialog(),
+                child: _buildQuickActionCard(
+                  'Start Timer',
+                  Icons.timer,
+                  Colors.orange,
+                  () => _startPomodoro(),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildQuickActionCard(
+                  'Settings',
+                  Icons.settings,
+                  Colors.blue,
+                  () => Navigator.pushNamed(context, '/settings'),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildActionButton(
-                  'Set Reminder',
-                  Icons.alarm_add,
-                  const Color(0xFFFF9800),
-                  () => _showReminderDialog(),
+                child: _buildQuickActionCard(
+                  'Test Alarm',
+                  Icons.alarm,
+                  Colors.red,
+                  () => Navigator.pushNamed(context, '/alarm-test'),
                 ),
               ),
             ],
@@ -574,7 +969,7 @@ class _SimpleDashboardState extends State<SimpleDashboard>
     );
   }
 
-  Widget _buildActionButton(
+  Widget _buildQuickActionCard(
       String title, IconData icon, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
@@ -582,36 +977,21 @@ class _SimpleDashboardState extends State<SimpleDashboard>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [color, color.withOpacity(0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border.all(color: color.withOpacity(0.3)),
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 28,
-              color: Colors.white,
-            ),
+            Icon(icon, size: 32, color: color),
             const SizedBox(height: 8),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 11,
+              style: TextStyle(
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: color,
               ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -1451,6 +1831,16 @@ class _SimpleDashboardState extends State<SimpleDashboard>
       ),
     );
   }
+
+  void _startPomodoro() {
+    // Navigate to Pomodoro screen
+    Navigator.pushNamed(context, '/pomodoro');
+  }
+
+  void _viewAnalytics() {
+    // Navigate to Analytics screen
+    Navigator.pushNamed(context, '/analytics');
+  }
 }
 
 class EnhancedAddTaskDialog extends StatefulWidget {
@@ -1963,5 +2353,15 @@ class _ReminderDialogState extends State<ReminderDialog> {
         backgroundColor: const Color(0xFFFF9800),
       ),
     );
+  }
+
+  void _startPomodoro() {
+    // Navigate to Pomodoro screen
+    Navigator.pushNamed(context, '/pomodoro');
+  }
+
+  void _viewAnalytics() {
+    // Navigate to Analytics screen
+    Navigator.pushNamed(context, '/analytics');
   }
 }

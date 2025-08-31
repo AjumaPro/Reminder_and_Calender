@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/note_provider.dart';
+import '../widgets/desktop_window_controls.dart';
 import 'simple_dashboard.dart';
 import 'calendar_view.dart';
 import 'notifications_board.dart';
@@ -89,66 +90,104 @@ class _MainScreenState extends State<MainScreen> {
       body: Stack(
         children: [
           // Main content (always takes full width)
-          Column(
-            children: [
-              // Top App Bar
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        _isSidebarOpen ? Icons.menu_open : Icons.menu,
-                        color: const Color(0xFF667EEA),
+          SafeArea(
+            child: Column(
+              children: [
+                // Top App Bar
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _isSidebarOpen = !_isSidebarOpen;
-                        });
-                      },
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        _currentIndex < _menuItems.length
-                            ? _menuItems[_currentIndex]['title']
-                            : _sidebarItems[_currentIndex - _menuItems.length]
-                                ['title'],
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      // Menu Button
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isSidebarOpen = !_isSidebarOpen;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF667EEA).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.menu,
+                            color: Color(0xFF667EEA),
+                            size: 20,
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    // User profile or additional actions
-                    CircleAvatar(
-                      backgroundColor: const Color(0xFF667EEA).withOpacity(0.1),
-                      child: const Icon(
-                        Icons.person,
-                        color: Color(0xFF667EEA),
+                      const SizedBox(width: 16),
+                      // Title
+                      Expanded(
+                        child: Text(
+                          _getCurrentTitle(),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      // Settings Button
+                      GestureDetector(
+                        onTap: () {
+                          _navigateToSettings();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF667EEA).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.settings,
+                            color: Color(0xFF667EEA),
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Desktop Window Controls
+                      const DesktopWindowControls(),
+                      const SizedBox(width: 8),
+                      // User Profile
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF667EEA),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: const Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              // Content Area
-              Expanded(
-                child: _buildCurrentScreen(),
-              ),
-            ],
+                // Main Content Area
+                Expanded(
+                  child: _buildCurrentScreen(),
+                ),
+              ],
+            ),
           ),
 
           // Backdrop overlay (to close sidebar when tapping outside)
@@ -264,33 +303,38 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ),
             ),
-        ],
-      ),
-      // Bottom Navigation (only main items)
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: _menuItems.asMap().entries.map((entry) {
-                final index = entry.key;
-                final item = entry.value;
-                return _buildBottomNavItem(item, index);
-              }).toList(),
+          // Bottom Navigation
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: _menuItems.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+                    return Expanded(
+                      child: _buildBottomNavItem(item, index),
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -389,7 +433,7 @@ class _MainScreenState extends State<MainScreen> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
           color:
               isSelected ? item['color'].withOpacity(0.1) : Colors.transparent,
@@ -401,16 +445,19 @@ class _MainScreenState extends State<MainScreen> {
             Icon(
               item['icon'],
               color: isSelected ? item['color'] : Colors.grey[600],
-              size: 24,
+              size: 22,
             ),
             const SizedBox(height: 4),
             Text(
               item['title'],
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected ? item['color'] : Colors.grey[600],
               ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ],
         ),
@@ -439,6 +486,11 @@ class _MainScreenState extends State<MainScreen> {
     } else {
       // Sidebar items (index >= _menuItems.length)
       final sidebarIndex = _currentIndex - _menuItems.length;
+      if (sidebarIndex >= _sidebarItems.length) {
+        // Fallback to dashboard if index is out of bounds
+        return const SimpleDashboard();
+      }
+
       switch (sidebarIndex) {
         case 0:
           return const NotificationsBoard();
@@ -529,5 +581,23 @@ class _MainScreenState extends State<MainScreen> {
         ],
       ),
     );
+  }
+
+  String _getCurrentTitle() {
+    if (_currentIndex < _menuItems.length) {
+      return _menuItems[_currentIndex]['title'];
+    } else {
+      final sidebarIndex = _currentIndex - _menuItems.length;
+      if (sidebarIndex >= 0 && sidebarIndex < _sidebarItems.length) {
+        return _sidebarItems[sidebarIndex]['title'];
+      }
+    }
+    return ''; // Fallback if index is out of bounds
+  }
+
+  void _navigateToSettings() {
+    setState(() {
+      _currentIndex = _menuItems.length + 4; // Settings index
+    });
   }
 }

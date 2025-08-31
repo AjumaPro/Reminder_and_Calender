@@ -89,27 +89,42 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
             ),
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _buildTitleField(),
-            const SizedBox(height: 16),
-            _buildDescriptionField(),
-            const SizedBox(height: 16),
-            _buildDateTimeSection(),
-            const SizedBox(height: 16),
-            _buildAlarmSection(),
-            const SizedBox(height: 16),
-            _buildPrioritySection(),
-            const SizedBox(height: 16),
-            _buildCategorySection(),
-            const SizedBox(height: 16),
-            _buildNoteSection(),
-            const SizedBox(height: 32),
-            _buildSaveButton(),
-          ],
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height -
+                    MediaQuery.of(context).padding.top -
+                    kToolbarHeight -
+                    32,
+              ),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    _buildTitleField(),
+                    const SizedBox(height: 16),
+                    _buildDescriptionField(),
+                    const SizedBox(height: 16),
+                    _buildDateTimeSection(),
+                    const SizedBox(height: 16),
+                    _buildAlarmSection(),
+                    const SizedBox(height: 16),
+                    _buildPrioritySection(),
+                    const SizedBox(height: 16),
+                    _buildCategorySection(),
+                    const SizedBox(height: 16),
+                    _buildNoteSection(),
+                    const SizedBox(height: 32),
+                    _buildSaveButton(),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -159,25 +174,58 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: ListTile(
-                    leading: const Icon(Icons.calendar_today),
-                    title: Text(
-                      DateFormat('MMM dd, yyyy').format(_selectedDate),
-                    ),
-                    onTap: _selectDate,
-                  ),
-                ),
-                Expanded(
-                  child: ListTile(
-                    leading: const Icon(Icons.access_time),
-                    title: Text(_selectedTime.format(context)),
-                    onTap: _selectTime,
-                  ),
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth > 400) {
+                  // Wide screen - use row layout
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: ListTile(
+                          leading: const Icon(Icons.calendar_today),
+                          title: Text(
+                            DateFormat('MMM dd, yyyy').format(_selectedDate),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onTap: _selectDate,
+                        ),
+                      ),
+                      Expanded(
+                        child: ListTile(
+                          leading: const Icon(Icons.access_time),
+                          title: Text(
+                            _selectedTime.format(context),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onTap: _selectTime,
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  // Narrow screen - use column layout
+                  return Column(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.calendar_today),
+                        title: Text(
+                          DateFormat('MMM dd, yyyy').format(_selectedDate),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: _selectDate,
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.access_time),
+                        title: Text(
+                          _selectedTime.format(context),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: _selectTime,
+                      ),
+                    ],
+                  );
+                }
+              },
             ),
           ],
         ),
@@ -232,17 +280,43 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            SegmentedButton<int>(
-              segments: const [
-                ButtonSegment(value: 0, label: Text('Low')),
-                ButtonSegment(value: 1, label: Text('Medium')),
-                ButtonSegment(value: 2, label: Text('High')),
-              ],
-              selected: {_priority},
-              onSelectionChanged: (Set<int> newSelection) {
-                setState(() {
-                  _priority = newSelection.first;
-                });
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth > 350) {
+                  // Wide screen - use segmented button
+                  return SegmentedButton<int>(
+                    segments: const [
+                      ButtonSegment(value: 0, label: Text('Low')),
+                      ButtonSegment(value: 1, label: Text('Medium')),
+                      ButtonSegment(value: 2, label: Text('High')),
+                    ],
+                    selected: {_priority},
+                    onSelectionChanged: (Set<int> newSelection) {
+                      setState(() {
+                        _priority = newSelection.first;
+                      });
+                    },
+                  );
+                } else {
+                  // Narrow screen - use dropdown
+                  return DropdownButtonFormField<int>(
+                    value: _priority,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.priority_high),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 0, child: Text('Low')),
+                      DropdownMenuItem(value: 1, child: Text('Medium')),
+                      DropdownMenuItem(value: 2, child: Text('High')),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _priority = value!;
+                      });
+                    },
+                  );
+                }
               },
             ),
           ],

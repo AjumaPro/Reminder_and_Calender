@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import '../services/alarm_service.dart';
+import '../services/notification_service.dart';
 
 class PomodoroScreen extends StatefulWidget {
   const PomodoroScreen({super.key});
@@ -23,6 +25,7 @@ class _PomodoroScreenState extends State<PomodoroScreen>
   bool _isBreak = false;
   int _completedSessions = 0;
   int _completedBreaks = 0;
+  bool _isAlarmPlaying = false;
 
   // Pomodoro settings
   int _workDuration = 25;
@@ -30,9 +33,23 @@ class _PomodoroScreenState extends State<PomodoroScreen>
   int _longBreakDuration = 15;
   int _sessionsBeforeLongBreak = 4;
 
+  // Services
+  final AlarmService _alarmService = AlarmService();
+  final NotificationService _notificationService = NotificationService();
+
   @override
   void initState() {
     super.initState();
+    _initializeServices();
+    _setupAnimations();
+  }
+
+  Future<void> _initializeServices() async {
+    await _alarmService.initialize();
+    await _notificationService.initialize();
+  }
+
+  void _setupAnimations() {
     _animationController = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
@@ -66,6 +83,7 @@ class _PomodoroScreenState extends State<PomodoroScreen>
     _timer?.cancel();
     _animationController.dispose();
     _pulseController.dispose();
+    _alarmService.dispose();
     super.dispose();
   }
 
@@ -108,7 +126,7 @@ class _PomodoroScreenState extends State<PomodoroScreen>
     _pulseController.stop();
   }
 
-  void _handleSessionComplete() {
+  void _handleSessionComplete() async {
     if (_isBreak) {
       _completedBreaks++;
       _startWorkSession();
@@ -117,9 +135,62 @@ class _PomodoroScreenState extends State<PomodoroScreen>
       _startBreakSession();
     }
 
-    // Vibrate and show notification
+    // Play alarm and show notification
+    await _playAlarm();
+    await _showNotification();
+
+    // Vibrate and show dialog
     HapticFeedback.mediumImpact();
     _showSessionCompleteDialog();
+  }
+
+  Future<void> _playAlarm() async {
+    try {
+      setState(() {
+        _isAlarmPlaying = true;
+      });
+
+      await _alarmService.playAlarm();
+
+      // Stop alarm after 10 seconds if not manually stopped
+      Timer(const Duration(seconds: 10), () {
+        _stopAlarm();
+      });
+    } catch (e) {
+      debugPrint('Failed to play alarm: $e');
+      setState(() {
+        _isAlarmPlaying = false;
+      });
+    }
+  }
+
+  Future<void> _stopAlarm() async {
+    try {
+      await _alarmService.stopAlarm();
+      setState(() {
+        _isAlarmPlaying = false;
+      });
+    } catch (e) {
+      debugPrint('Failed to stop alarm: $e');
+    }
+  }
+
+  Future<void> _showNotification() async {
+    try {
+      final title = _isBreak ? 'Break Complete!' : 'Work Session Complete!';
+      final body = _isBreak
+          ? 'Great job! Time to get back to work.'
+          : 'Excellent work! Time for a well-deserved break.';
+
+      await _notificationService.showNotification(
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: title,
+        body: body,
+        payload: _isBreak ? 'break_complete' : 'work_complete',
+      );
+    } catch (e) {
+      debugPrint('Failed to show notification: $e');
+    }
   }
 
   void _startWorkSession() {
@@ -143,16 +214,48 @@ class _PomodoroScreenState extends State<PomodoroScreen>
   void _showSessionCompleteDialog() {
     showDialog(
       context: context,
+      barrierDismissible: false, // Prevent dismissing while alarm is playing
       builder: (context) => AlertDialog(
-        title: Text(_isBreak ? 'Break Complete!' : 'Work Session Complete!'),
-        content: Text(
-          _isBreak
-              ? 'Great job! Time to get back to work.'
-              : 'Excellent work! Time for a well-deserved break.',
+        title: Row(
+          children: [
+            Icon(
+              _isBreak ? Icons.coffee : Icons.work,
+              color: _isBreak ? Colors.orange : Colors.green,
+            ),
+            const SizedBox(width: 8),
+            Text(_isBreak ? 'Break Complete!' : 'Work Session Complete!'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _isBreak
+                  ? 'Great job! Time to get back to work.'
+                  : 'Excellent work! Time for a well-deserved break.',
+            ),
+            if (_isAlarmPlaying) ...[
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.volume_up, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Text('Alarm is playing...'),
+                ],
+              ),
+            ],
+          ],
         ),
         actions: [
+          if (_isAlarmPlaying)
+            TextButton(
+              onPressed: _stopAlarm,
+              child: const Text('Stop Alarm'),
+            ),
           TextButton(
             onPressed: () {
+              _stopAlarm();
               Navigator.pop(context);
               if (_isBreak) {
                 _startWorkSession();

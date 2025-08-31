@@ -66,51 +66,56 @@ class _CalendarScreenState extends State<CalendarScreen> {
         builder: (context, taskProvider, child) {
           _updateEvents(taskProvider.tasks);
 
-          return Column(
-            children: [
-              TableCalendar<Task>(
-                firstDay: DateTime.utc(2020, 1, 1),
-                lastDay: DateTime.utc(2030, 12, 31),
-                focusedDay: _focusedDay,
-                calendarFormat: _calendarFormat,
-                selectedDayPredicate: (day) {
-                  return isSameDay(_selectedDay, day);
-                },
-                onDaySelected: (selectedDay, focusedDay) {
-                  setState(() {
-                    _selectedDay = selectedDay;
-                    _focusedDay = focusedDay;
-                  });
-                  taskProvider.setSelectedDate(selectedDay);
-                },
-                onFormatChanged: (format) {
-                  setState(() {
-                    _calendarFormat = format;
-                  });
-                },
-                onPageChanged: (focusedDay) {
-                  _focusedDay = focusedDay;
-                },
-                eventLoader: (day) {
-                  return _events[DateTime(day.year, day.month, day.day)] ?? [];
-                },
-                calendarStyle: const CalendarStyle(
-                  markersMaxCount: 3,
-                  markerDecoration: BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
+          return SafeArea(
+            child: Column(
+              children: [
+                Flexible(
+                  child: TableCalendar<Task>(
+                    firstDay: DateTime.utc(2020, 1, 1),
+                    lastDay: DateTime.utc(2030, 12, 31),
+                    focusedDay: _focusedDay,
+                    calendarFormat: _calendarFormat,
+                    selectedDayPredicate: (day) {
+                      return isSameDay(_selectedDay, day);
+                    },
+                    onDaySelected: (selectedDay, focusedDay) {
+                      setState(() {
+                        _selectedDay = selectedDay;
+                        _focusedDay = focusedDay;
+                      });
+                      taskProvider.setSelectedDate(selectedDay);
+                    },
+                    onFormatChanged: (format) {
+                      setState(() {
+                        _calendarFormat = format;
+                      });
+                    },
+                    onPageChanged: (focusedDay) {
+                      _focusedDay = focusedDay;
+                    },
+                    eventLoader: (day) {
+                      return _events[DateTime(day.year, day.month, day.day)] ??
+                          [];
+                    },
+                    calendarStyle: const CalendarStyle(
+                      markersMaxCount: 3,
+                      markerDecoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    headerStyle: const HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: true,
+                    ),
                   ),
                 ),
-                headerStyle: const HeaderStyle(
-                  formatButtonVisible: false,
-                  titleCentered: true,
+                const Divider(),
+                Expanded(
+                  child: _buildTaskList(taskProvider),
                 ),
-              ),
-              const Divider(),
-              Expanded(
-                child: _buildTaskList(taskProvider),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),

@@ -700,7 +700,13 @@ class _NotificationsBoardState extends State<NotificationsBoard>
           ),
           TextButton(
             onPressed: () {
-              // TODO: Implement clear all notifications
+              // Clear all notifications by marking tasks as completed
+              final taskProvider = context.read<TaskProvider>();
+              for (final task in taskProvider.tasks) {
+                if (!task.isCompleted) {
+                  taskProvider.toggleTaskCompletion(task.id);
+                }
+              }
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -717,13 +723,8 @@ class _NotificationsBoardState extends State<NotificationsBoard>
   }
 
   void _navigateToDashboard() {
-    // TODO: Navigate to dashboard
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigate to dashboard coming soon!'),
-        backgroundColor: Color(0xFF667EEA),
-      ),
-    );
+    // Navigate to dashboard
+    Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (route) => false);
   }
 
   void _viewDetails(NotificationItem notification) {
@@ -772,13 +773,20 @@ class _NotificationsBoardState extends State<NotificationsBoard>
   }
 
   void _editNotification(NotificationItem notification) {
-    // TODO: Navigate to edit screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Edit feature coming soon!'),
-        backgroundColor: Color(0xFF667EEA),
-      ),
-    );
+    if (notification.task != null) {
+      // Navigate to task edit screen
+      Navigator.pushNamed(context, '/edit-task', arguments: notification.task);
+    } else if (notification.note != null) {
+      // Navigate to note edit screen
+      Navigator.pushNamed(context, '/edit-note', arguments: notification.note);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot edit this notification type'),
+          backgroundColor: Color(0xFFFF9800),
+        ),
+      );
+    }
   }
 
   void _deleteNotification(NotificationItem notification) {

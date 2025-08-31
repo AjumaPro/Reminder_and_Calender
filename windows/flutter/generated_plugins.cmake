@@ -3,7 +3,9 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  desktop_window
   permission_handler_windows
+  window_size
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
